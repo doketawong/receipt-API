@@ -1,0 +1,10 @@
+@RestController
+public class MemberRegistrationV2Controller {
+    @RequestMapping(value = {"/getReceipt"}, method = RequestMethod.POST)
+    public ResponseEntity<> test(@RequestBody)
+            throws JsonProcessingException {
+       return null;
+    }
+
+
+}
