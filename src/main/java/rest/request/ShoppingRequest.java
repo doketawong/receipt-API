@@ -3,7 +3,6 @@ package rest.request;
 import java.util.List;
 
 public class ShoppingRequest {
-
     private List<ItemDetails> itemDetails;
 
     public List<ItemDetails> getItemDetails() {

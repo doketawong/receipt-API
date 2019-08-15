@@ -1,12 +1,10 @@
 package rest.response;
 
-import rest.request.ItemDetails;
-
 import java.util.List;
 
 public class ShoppingResponse {
 
-    private List<ItemDetails> itemDetailsList;
+    private List<ItemDetailsWithTaxAndTotal> itemDetailsWithTaxAndTotals;
 
     private double subTotal;
 
@@ -14,12 +12,12 @@ public class ShoppingResponse {
 
     private double Total;
 
-    public List<ItemDetails> getItemDetailsList() {
-        return itemDetailsList;
+    public List<ItemDetailsWithTaxAndTotal> getItemDetailsWithTaxAndTotals() {
+        return itemDetailsWithTaxAndTotals;
     }
 
-    public void setItemDetailsList(List<ItemDetails> itemDetailsList) {
-        this.itemDetailsList = itemDetailsList;
+    public void setItemDetailsWithTaxAndTotals(List<ItemDetailsWithTaxAndTotal> itemDetailsWithTaxAndTotals) {
+        this.itemDetailsWithTaxAndTotals = itemDetailsWithTaxAndTotals;
     }
 
     public double getSubTotal() {

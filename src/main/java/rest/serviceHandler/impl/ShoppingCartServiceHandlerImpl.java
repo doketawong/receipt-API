@@ -1,13 +1,18 @@
 package rest.serviceHandler.impl;
 
+
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import rest.request.ItemDetails;
 import rest.common.ShoppingCartConstant;
+import rest.request.ItemDetails;
 import rest.request.ShoppingRequest;
+import rest.response.ItemDetailsWithTaxAndTotal;
 import rest.response.ShoppingResponse;
+
 import rest.serviceHandler.ShoppingCartServiceHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,6 +25,7 @@ public class ShoppingCartServiceHandlerImpl implements ShoppingCartServiceHandle
     @Override
     public ResponseEntity<ShoppingResponse> getReceipt(ShoppingRequest shoppingRequest) {
         List<ItemDetails> itemDetailsList = shoppingRequest.getItemDetails();
+        List<ItemDetailsWithTaxAndTotal> itemDetailsWithTaxAndTotalList = new ArrayList<>();
         ShoppingResponse shoppingResponse = new ShoppingResponse();
         double subtotal = 0;
         double taxTotal = 0;
@@ -30,38 +36,53 @@ public class ShoppingCartServiceHandlerImpl implements ShoppingCartServiceHandle
                 String item = itemDetails.getProductName();
                 Double price = itemDetails.getPrice();
                 Integer quantity = itemDetails.getQuantity();
+                ItemDetailsWithTaxAndTotal itemDetailsWithTaxAndTotal = new ItemDetailsWithTaxAndTotal();
+                itemDetailsWithTaxAndTotal.setCountry(country);
+                itemDetailsWithTaxAndTotal.setProductName(item);
+                itemDetailsWithTaxAndTotal.setPrice(price);
+                itemDetailsWithTaxAndTotal.setQuantity(quantity);
+
 
                 if(isCalifornia(country)){
                     //California tax calculation
-                    double itemTotalPrice = Math.round((price * quantity) * 20) / 20;
+                    double itemTotalPrice = Math.ceil((price * quantity) * 20) / 20;
                     double tax = 0;
                     if(!isFoodExempt(item)){
-                        tax = Math.round((itemTotalPrice * caTax) * 20) / 20;
+                        tax = Math.ceil((itemTotalPrice * caTax) * 20) / 20;
                     }
+                    itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
+                    itemDetailsWithTaxAndTotal.setTax(tax);
                     subtotal = subtotal + itemTotalPrice;
                     taxTotal = taxTotal + tax;
                 } else if(isNewYork(country)){
                     //New York tax calculation
-                    double itemTotalPrice = Math.round((price * quantity) * 20) / 20;
+                    double itemTotalPrice = Math.ceil((price * quantity) * 20) / 20;
                     double tax = 0;
                     if(!isFoodExempt(item) && !isShirtExempt(item)){
-                        tax = Math.round((itemTotalPrice * caTax) * 20) / 20;
+                        tax = Math.ceil((itemTotalPrice * nyTax) * 20) / 20;
                     } else{
                         tax = 0;
                     }
+                    itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
+                    itemDetailsWithTaxAndTotal.setTax(tax);
                     subtotal = subtotal + itemTotalPrice;
                     taxTotal = taxTotal + tax;
 
                 }else{
                     //normal price without tax
                     double itemTotalPrice = Math.round((price * quantity) * 20) / 20;
+                    itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
 
                 }
-
+                itemDetailsWithTaxAndTotalList.add(itemDetailsWithTaxAndTotal);
             }
             total = subtotal + taxTotal;
         }
-        return null;
+        shoppingResponse.setItemDetailsWithTaxAndTotals(itemDetailsWithTaxAndTotalList);
+        shoppingResponse.setSubTotal(subtotal);
+        shoppingResponse.setTax(taxTotal);
+        shoppingResponse.setTotal(total);
+        return ResponseEntity.ok(shoppingResponse);
     }
 
     private Boolean isCalifornia(String country){

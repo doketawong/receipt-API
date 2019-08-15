@@ -1,8 +1,8 @@
 package rest.request;
 
-import com.sun.istack.internal.NotNull;
+import javax.validation.constraints.NotNull;
 
-public class ItemDetails{
+public class ItemDetails {
     @NotNull
     private String productName;
     @NotNull
