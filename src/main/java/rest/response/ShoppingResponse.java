@@ -12,6 +12,17 @@ public class ShoppingResponse {
 
     private double Total;
 
+    private List<String>  error;
+
+
+    public List<String> getError() {
+        return error;
+    }
+
+    public void setError(List<String> error) {
+        this.error = error;
+    }
+
     public List<ItemDetailsWithTaxAndTotal> getItemDetailsWithTaxAndTotals() {
         return itemDetailsWithTaxAndTotals;
     }

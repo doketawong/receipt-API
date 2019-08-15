@@ -2,9 +2,11 @@ package rest.serviceHandler.impl;
 
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import rest.common.ShoppingCartConstant;
+import rest.request.ErrorInfo;
 import rest.request.ItemDetails;
 import rest.request.ShoppingRequest;
 import rest.response.ItemDetailsWithTaxAndTotal;
@@ -21,6 +23,8 @@ public class ShoppingCartServiceHandlerImpl implements ShoppingCartServiceHandle
     double nyTax = ShoppingCartConstant.NYTAXRATE;
     String[] foodExempt = ShoppingCartConstant.FOODEXEMPT;
     String[] shirtExempt = ShoppingCartConstant.SHIRTEXEMPT;
+    @Autowired
+    private ErrorInfo errorInfo;
 
     @Override
     public ResponseEntity<ShoppingResponse> getReceipt(ShoppingRequest shoppingRequest) {
@@ -30,58 +34,64 @@ public class ShoppingCartServiceHandlerImpl implements ShoppingCartServiceHandle
         double subtotal = 0;
         double taxTotal = 0;
         double total = 0;
-        if(!itemDetailsList.isEmpty()){
-            for(ItemDetails itemDetails : itemDetailsList){
-                String country = itemDetails.getCountry().toLowerCase();
-                String item = itemDetails.getProductName();
-                Double price = itemDetails.getPrice();
-                Integer quantity = itemDetails.getQuantity();
-                ItemDetailsWithTaxAndTotal itemDetailsWithTaxAndTotal = new ItemDetailsWithTaxAndTotal();
-                itemDetailsWithTaxAndTotal.setCountry(country);
-                itemDetailsWithTaxAndTotal.setProductName(item);
-                itemDetailsWithTaxAndTotal.setPrice(price);
-                itemDetailsWithTaxAndTotal.setQuantity(quantity);
+
+        List<String> errorMessage = errorInfo.validate(shoppingRequest);
+        if(errorMessage.size()>0){
+            shoppingResponse.setError(errorMessage);
+        }else {
+            if (!itemDetailsList.isEmpty()) {
+                for (ItemDetails itemDetails : itemDetailsList) {
+                    String country = itemDetails.getCountry().toLowerCase();
+                    String item = itemDetails.getProductName();
+                    Double price = itemDetails.getPrice();
+                    Integer quantity = itemDetails.getQuantity();
+                    ItemDetailsWithTaxAndTotal itemDetailsWithTaxAndTotal = new ItemDetailsWithTaxAndTotal();
+                    itemDetailsWithTaxAndTotal.setCountry(country);
+                    itemDetailsWithTaxAndTotal.setProductName(item);
+                    itemDetailsWithTaxAndTotal.setPrice(price);
+                    itemDetailsWithTaxAndTotal.setQuantity(quantity);
 
 
-                if(isCalifornia(country)){
-                    //California tax calculation
-                    double itemTotalPrice = Math.ceil((price * quantity) * 20) / 20;
-                    double tax = 0;
-                    if(!isFoodExempt(item)){
-                        tax = Math.ceil((itemTotalPrice * caTax) * 20) / 20;
+                    if (isCalifornia(country)) {
+                        //California tax calculation
+                        double itemTotalPrice = Math.ceil((price * quantity) * 20) / 20;
+                        double tax = 0;
+                        if (!isFoodExempt(item)) {
+                            tax = Math.ceil((itemTotalPrice * caTax) * 20) / 20;
+                        }
+                        itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
+                        itemDetailsWithTaxAndTotal.setTax(tax);
+                        subtotal = subtotal + itemTotalPrice;
+                        taxTotal = taxTotal + tax;
+                    } else if (isNewYork(country)) {
+                        //New York tax calculation
+                        double itemTotalPrice = Math.ceil((price * quantity) * 20) / 20;
+                        double tax = 0;
+                        if (!isFoodExempt(item) && !isShirtExempt(item)) {
+                            tax = Math.ceil((itemTotalPrice * nyTax) * 20) / 20;
+                        } else {
+                            tax = 0;
+                        }
+                        itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
+                        itemDetailsWithTaxAndTotal.setTax(tax);
+                        subtotal = subtotal + itemTotalPrice;
+                        taxTotal = taxTotal + tax;
+
+                    } else {
+                        //normal price without tax
+                        double itemTotalPrice = Math.round((price * quantity) * 20) / 20;
+                        itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
+
                     }
-                    itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
-                    itemDetailsWithTaxAndTotal.setTax(tax);
-                    subtotal = subtotal + itemTotalPrice;
-                    taxTotal = taxTotal + tax;
-                } else if(isNewYork(country)){
-                    //New York tax calculation
-                    double itemTotalPrice = Math.ceil((price * quantity) * 20) / 20;
-                    double tax = 0;
-                    if(!isFoodExempt(item) && !isShirtExempt(item)){
-                        tax = Math.ceil((itemTotalPrice * nyTax) * 20) / 20;
-                    } else{
-                        tax = 0;
-                    }
-                    itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
-                    itemDetailsWithTaxAndTotal.setTax(tax);
-                    subtotal = subtotal + itemTotalPrice;
-                    taxTotal = taxTotal + tax;
-
-                }else{
-                    //normal price without tax
-                    double itemTotalPrice = Math.round((price * quantity) * 20) / 20;
-                    itemDetailsWithTaxAndTotal.setTotal(itemTotalPrice);
-
+                    itemDetailsWithTaxAndTotalList.add(itemDetailsWithTaxAndTotal);
                 }
-                itemDetailsWithTaxAndTotalList.add(itemDetailsWithTaxAndTotal);
+                total = subtotal + taxTotal;
             }
-            total = subtotal + taxTotal;
+            shoppingResponse.setItemDetailsWithTaxAndTotals(itemDetailsWithTaxAndTotalList);
+            shoppingResponse.setSubTotal(subtotal);
+            shoppingResponse.setTax(taxTotal);
+            shoppingResponse.setTotal(total);
         }
-        shoppingResponse.setItemDetailsWithTaxAndTotals(itemDetailsWithTaxAndTotalList);
-        shoppingResponse.setSubTotal(subtotal);
-        shoppingResponse.setTax(taxTotal);
-        shoppingResponse.setTotal(total);
         return ResponseEntity.ok(shoppingResponse);
     }
 
