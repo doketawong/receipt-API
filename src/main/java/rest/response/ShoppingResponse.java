@@ -12,14 +12,14 @@ public class ShoppingResponse {
 
     private double Total;
 
-    private List<String>  error;
+    private String  error;
 
 
-    public List<String> getError() {
+    public String getError() {
         return error;
     }
 
-    public void setError(List<String> error) {
+    public void setError(String error) {
         this.error = error;
     }
 

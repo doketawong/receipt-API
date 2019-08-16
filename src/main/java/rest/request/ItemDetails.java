@@ -1,15 +1,20 @@
 package rest.request;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 public class ItemDetails {
-    @NotNull
+    @Valid
+    @NotNull(message = "productName may not be null")
     private String productName;
-    @NotNull
+    @Valid
+    @NotNull(message = "country may not be null")
     private String country;
-    @NotNull
+    @Valid
+    @NotNull(message = "price may not be null")
     private Double price;
-    @NotNull
+    @Valid
+    @NotNull(message = "quantity may not be null")
     private Integer quantity;
 
     public String getProductName() {
